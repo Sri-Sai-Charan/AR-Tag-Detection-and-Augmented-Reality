@@ -5,6 +5,7 @@ import scipy.fftpack
 from scipy.fftpack import fft, fft2, ifft
 import cv2 as cv
 from matplotlib import pyplot as plt
+import math
 # cv.namedWindow('frame',cv.WINDOW_NORMAL)
 # cv.resizeWindow('frame', (600, 600))
 
@@ -27,7 +28,7 @@ def fft_func(frame):
     img_back = cv.idft(f_ishift)
     img_back = cv.magnitude(img_back[:, :, 0], img_back[:, :, 1])
     fig = plt.figure()
-
+    # erode = cv.erode
     # ax1 = fig.add_subplot(2,2,1)
     # ax1.imshow(img, cmap='gray')
     # ax1.title.set_text('Input Image')
@@ -111,7 +112,7 @@ def canny_func(frame):
     mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
     mask[mask_area] = 1
     edges = cv.Canny(img_blur, threshold1=100, threshold2=200)
-    edges = edges*mask
+    # edges = edges*mask
     blank = np.zeros_like(edges)
     
     avg_mat = np.argwhere(edges)
@@ -144,9 +145,9 @@ def canny_func(frame):
     mask_area2 = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
     mask2 = np.zeros((rows, cols), np.uint8)
     mask2[mask_area2] = 1
-    edges = edges*mask2
-    cv.circle(edges,(ccol,crow),450,255,5)
-    cv.circle(edges,(int(iy_mean),int(ix_mean)),200,255,3)
+    # edges = edges*mask2
+    # cv.circle(edges,(ccol,crow),450,255,5)
+    # cv.circle(edges,(int(iy_mean),int(ix_mean)),200,255,3)
     cv.imshow('frame',edges)
     # cv.imshow('frame',blank)
 
@@ -169,6 +170,8 @@ def canny_func(frame):
 #     cv.imshow('BLOB',im_with_keypoints)
 #     if cv.waitKey(0) & 0xff == 27:
 #         cv.destroyAllWindows()
+
+
 
 def harris_func(frame):
     img = frame
@@ -209,3 +212,49 @@ def blob_function(frame):
 #          [0, 0, 0, xw3, yw3, 1, -yc3*xw3, -yc3*yw3, -yc3],
 #          [xw4, yw4, 1, 0, 0, 0, -xc4*xw4, -xc4*yw4, -xc4],
 #          [0, 0, 0, xw4, yw4, 1, -yc4*xw4, -yc4*yw4, -yc4]]
+
+def hough_transform(frame):
+    rho_resolution=150
+    theta_resolution=360
+    threshold=180
+    rho_theta_values = []
+    width, height = frame.shape
+    hough_img = np.empty((width, height, 3))
+    hough_img[:, :, 2] =  hough_img[:, :, 1] =  hough_img[:, :, 0] =  og_img/255.
+    
+    digonal = math.sqrt(width*width + height*height)
+    max_size=max(width,height)**2
+    
+    thetas = np.linspace(0,180,theta_resolution+1)
+    rhos = np.linspace(-digonal,digonal,rho_resolution+1)
+   
+    acc = np.zeros((rho_resolution+1,theta_resolution+1))
+
+    for x_index in range(0, width):
+        for y_index in range(0, height):
+            if edges[x_index][y_index] > 0:
+                for t_index in range(0, len(thetas)):
+                    rho = x_index * math.cos(thetas[t_index]) + y_index * math.sin(thetas[t_index])
+                    for r_index in range(0, len(rhos)):
+                        if rhos[r_index]>rho:
+                            break
+                    acc[r_index][t_index] += 1
+   
+    for rho_value in range(0, len(rhos)):
+        for t_value in range(0, len(thetas)):
+            if acc[rho_value][t_value] >= threshold:
+                rho_theta_values.append([rhos[rho_value], thetas[t_value]])
+
+    
+    for rho_theta in rho_theta_values:
+        rho=rho_theta[0]
+        theta=rho_theta[1]
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a*rho
+        y0 = b*rho
+        x1 = int(x0 + max_size*(-b))
+        y1 = int(y0 + max_size*(a))
+        x2 = int(x0 - max_size*(-b))
+        y2 = int(y0 - max_size*(a))
+        cv.line(hough_img,(x1,y1),(x2,y2),(1,0,0),1)

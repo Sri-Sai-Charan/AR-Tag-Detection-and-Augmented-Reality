@@ -6,6 +6,7 @@ from scipy.fftpack import fft, fft2, ifft
 import cv2 as cv
 import matplotlib.pyplot as plt
 from imagePreprocessing import *
+from hough_lines import *
 cv.namedWindow('frame',cv.WINDOW_NORMAL)
 cv.resizeWindow('frame', (600, 600))
 
@@ -22,11 +23,12 @@ def main():
             break        
         # contour_mapping(frame)
         # blob_detection_func(frame)
-        edges = canny_func(frame)
+        # edges = canny_func(frame)
         # blob_function(frame)
-
-        # gray = gray_conversion(frame)
-        # fft_img = fft_func(gray)
+        
+        gray = gray_conversion(frame)
+        # hough_transform(gray)
+        fft_img = fft_func(gray)
         # shi_tomasi_func(edges)
         # edges=cv.cvtColor(edges,cv.COLOR_GRAY2BGR)
         # harris_func(edges)
