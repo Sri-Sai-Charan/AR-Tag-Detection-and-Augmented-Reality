@@ -1,5 +1,5 @@
 # # %matplotlib inline
-# import cv2
+import cv2 as cv
 # import matplotlib.pyplot as plt
 # import matplotlib.colors
 # import numpy as np
@@ -222,6 +222,71 @@ def show_hough_line(img, accumulator, thetas, rhos, save_path=None):
     if save_path is not None:
         plt.savefig(save_path, bbox_inches='tight')
     plt.show()
+
+def contour_mapping(frame):
+    img_blur = cv.GaussianBlur(frame,(3,3), 0)
+    edges = cv.Canny(image=img_blur, threshold1=100, threshold2=200)
+    img = edges 
+    contours, hierarchy = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    i = 0
+    out = np.zeros_like(img)
+    for c in contours:
+        if (30000 < int(cv.contourArea(c)) < 40000):           
+            mask = np.zeros_like(img)
+            cv.drawContours(mask,contours,i,(255),cv.FILLED) 
+            # img_pl = np.zeros_like(img)/
+            out[mask == 255] = img[mask == 255]
+
+            cv.imshow('frame',out)
+            cv.waitKey(0)
+        i+=1
+
+
+
+
+def canny_func_with_circular_masks(frame):
+    img_blur = cv.GaussianBlur(frame,(3,3), 0)
+    gray = cv.cvtColor(frame,cv.COLOR_BGR2GRAY)
+    rows, cols = gray.shape
+    crow, ccol = int(rows / 2), int(cols / 2)
+
+    mask = np.zeros((rows, cols), np.uint8)
+    r = 450
+    center = [crow, ccol]
+    x, y = np.ogrid[:rows, :cols]
+    mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+    mask[mask_area] = 1
+    edges = cv.Canny(img_blur, threshold1=100, threshold2=200)
+    edges = edges*mask
+    blank = np.zeros_like(edges)
+    avg_mat = np.argwhere(edges)
+
+    ix = avg_mat[:,0]
+    iy = avg_mat[:,1]
+    ix_mean = np.mean(ix)
+    iy_mean = np.mean(iy)
+    center = [ix_mean,iy_mean]
+
+    r= 200
+    x, y = np.ogrid[:rows, :cols]
+    mask_area2 = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+    mask2 = np.zeros((rows, cols), np.uint8)
+    mask2[mask_area2] = 1
+    edges = edges*mask2
+
+    return edges
+
+
+# def homography_func(i,w):
+
+#     a = [[xw1, yw1, 1, 0, 0, 0, -xc1*xw1, -xc1*yw1, -xc1],
+#          [0, 0, 0, xw1, yw1, 1, -yc1*xw1, -yc1*yw1, -yc1],
+#          [xw2, yw2, 1, 0, 0, 0, -xc2*xw2, -xc2*yw2, -xc2],
+#          [0, 0, 0, xw2, yw2, 1, -yc2*xw2, -yc2*yw2, -yc2],
+#          [xw3, yw3, 1, 0, 0, 0, -xc3*xw3, -xc3*yw3, -xc3],
+#          [0, 0, 0, xw3, yw3, 1, -yc3*xw3, -yc3*yw3, -yc3],
+#          [xw4, yw4, 1, 0, 0, 0, -xc4*xw4, -xc4*yw4, -xc4],
+#          [0, 0, 0, xw4, yw4, 1, -yc4*xw4, -yc4*yw4, -yc4]]
 
 
 if __name__ == '__main__':

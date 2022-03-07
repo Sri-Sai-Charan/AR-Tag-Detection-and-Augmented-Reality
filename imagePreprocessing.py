@@ -5,20 +5,20 @@ import scipy.fftpack
 from scipy.fftpack import fft, fft2, ifft
 import cv2 as cv
 from matplotlib import pyplot as plt
-import math
-# cv.namedWindow('frame',cv.WINDOW_NORMAL)
-# cv.resizeWindow('frame', (600, 600))
+
+
 
 def fft_func(frame):
-    img = frame
+    img = cv.cvtColor(frame,cv.COLOR_BGR2GRAY)
+    ret , img = cv.threshold(img,127,255,cv.THRESH_BINARY)
     dft = cv.dft(np.float32(img), flags=cv.DFT_COMPLEX_OUTPUT)
+    
     dft_shift = np.fft.fftshift(dft)
-    magnitude_spectrum = 20 * np.log(cv.magnitude(dft_shift[:, :, 0], dft_shift[:, :, 1]))
+    # magnitude_spectrum = 20 * np.log(cv.magnitude(dft_shift[:, :, 0], dft_shift[:, :, 1]))
     rows, cols = img.shape
     crow, ccol = int(rows / 2), int(cols / 2)
-
     mask = np.ones((rows, cols, 2), np.uint8)
-    r = 80
+    r = 350
     center = [crow, ccol]
     x, y = np.ogrid[:rows, :cols]
     mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
@@ -27,234 +27,207 @@ def fft_func(frame):
     f_ishift = np.fft.ifftshift(fshift)
     img_back = cv.idft(f_ishift)
     img_back = cv.magnitude(img_back[:, :, 0], img_back[:, :, 1])
-    fig = plt.figure()
-    # erode = cv.erode
-    # ax1 = fig.add_subplot(2,2,1)
-    # ax1.imshow(img, cmap='gray')
-    # ax1.title.set_text('Input Image')
-    # ax2 = fig.add_subplot(2,2,2)
-    # ax2.imshow(magnitude_spectrum, cmap='gray')
-    # ax2.title.set_text('FFT of image')
-    # ax3 = fig.add_subplot(2,2,3)
-    # ax3.imshow(fshift_mask_mag, cmap='gray')
-    # ax3.title.set_text('FFT + Mask')
-    # ax4 = fig.add_subplot(2,2,4)
-    # fig.imshow(img_back, cmap='gray')
-    # plt.imshow(img_back)
-    # ax4.title.set_text('After inverse FFT')
-    
-    # plt.show()
-    # print(img_back.shape)
-    cv.imshow('frame',img_back)
-    cv.waitKey(0)
+
+    min_scale = np.min(img_back)
+    max_scale = np.max(img_back)
+    img_back = (img_back - min_scale)/max_scale
+    img_back = np.uint8(img_back*255)
+
+    # cv.imshow('frame',img_back)
     return img_back
 
-    # plt.subplot(2, 2, 1), plt.imshow(img, cmap='gray')
-    # plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-    # plt.subplot(2, 2, 2), plt.imshow(magnitude_spectrum, cmap='gray')
-    # plt.title('After FFT'), plt.xticks([]), plt.yticks([])
-    # plt.subplot(2, 2, 3), plt.imshow(fshift_mask_mag, cmap='gray')
-    # plt.title('FFT + Mask'), plt.xticks([]), plt.yticks([])
-    # plt.imshow(img_back, cmap='gray')
-    # plt.title('After FFT Inverse'), plt.xticks([]), plt.yticks([])
-    # plt.show()
-    
-
 def shi_tomasi_func(frame):
-    corners = cv.goodFeaturesToTrack(frame,25,0.01,10)
+    corners = cv.goodFeaturesToTrack(frame,500,0.001,1)
     corners = np.int0(corners)
+    x_arr = []
+    y_arr  = []
+
+    my_frame = frame.copy()
     for i in corners:
         x,y = i.ravel()
-        cv.circle(frame,(x,y),3,255,2)
-    plt.imshow(frame, cmap='gray'),plt.show()
+        x_arr.append(x)
+        y_arr.append(y)
+    #     cv.circle(frame,(x,y),3,(255,0,0),10)
+    # cv.namedWindow("shi_tomasi all corners",cv.WINDOW_NORMAL)
+    # cv.imshow("shi_tomasi all corners",frame)
+    
+    x_max = np.max(x_arr[:])
+    y_max = np.max(y_arr[:])
+    x_min = np.min(x_arr[:])
+    y_min = np.min(y_arr[:])
 
-def corner_detection(frame):
-    # gray = cv.cvtColor(frame,cv.COLOR_BGR2GRAY)
-    corners = cv.goodFeaturesToTrack(frame,25,0.01,10)
-    corners = np.int0(corners)
-    for i in corners:
-        x,y = i.ravel()
-        cv.circle(frame,(x,y),3,255,-1)
-    plt.imshow(frame),plt.show()
+    pt1 = np.argwhere(corners[:,0,0]==x_max) # left 
+    pt2 = np.argwhere(corners[:,0,0]==x_min) # right 
+    pt3 = np.argwhere(corners[:,0,1]==y_max) # top
+    pt4 = np.argwhere(corners[:,0,1]==y_min) # bottom
 
-def contour_mapping(frame):
-    img_blur = cv.GaussianBlur(frame,(3,3), 0)
-    edges = cv.Canny(image=img_blur, threshold1=100, threshold2=200)
-    img = edges 
-    contours, hierarchy = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    i = 0
-    out = np.zeros_like(img)
-    for c in contours:
-        if (30000 < int(cv.contourArea(c)) < 40000):           
-            mask = np.zeros_like(img)
-            cv.drawContours(mask,contours,i,(255),cv.FILLED) 
-            # img_pl = np.zeros_like(img)/
-            out[mask == 255] = img[mask == 255]
-            # corner_detection(out)
-            cv.imshow('frame',out)
-            cv.waitKey(0)
-        i+=1
+    my_corners =[]
+    my_corners.append([np.max(corners[pt4,0,0]),y_min]) # top left    
+    my_corners.append([x_max,np.min(corners[pt1,0,1])]) # top right
+    my_corners.append([np.max(corners[pt3,0,0]),y_max]) # bottom right
+    my_corners.append([x_min,np.min(corners[pt2,0,1])]) # Bottom left
+    
+    # my_corners = rolling_avg(my_corners)
+    # print(my_corners)
+    # for i in my_corners:
+    #     cv.circle(my_frame,(i[0],i[1]),3,(255,0,0),10)
+    # cv.namedWindow("shi_tomasi",cv.WINDOW_NORMAL)
+    # cv.imshow("shi_tomasi",my_frame)
+    # print(my_corners)
+    return np.array(my_corners)
 
-center_array= []
+array_for_avg = []
 
-def canny_func(frame):
-    img_blur = cv.GaussianBlur(frame,(3,3), 0)
+def rolling_avg(arr):
+    global array_for_avg
+    array_for_avg.append(arr)
 
-    # median = cv.medianBlur(img_blur, 5)
-    gray = gray_conversion(frame)
-    rows, cols = gray.shape
-    crow, ccol = int(rows / 2), int(cols / 2)
+    if len(array_for_avg) < 2:
+        array_for_avg.append(arr)
+        return arr
+    else:
+        array_for_avg.pop(0)
+        array_for_avg.append(arr)
+        return np.int32(np.mean(np.array(array_for_avg),axis=0))
 
-    mask = np.zeros((rows, cols), np.uint8)
-    r = 450
-    center = [crow, ccol]
-    x, y = np.ogrid[:rows, :cols]
-    mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
-    mask[mask_area] = 1
-    edges = cv.Canny(img_blur, threshold1=100, threshold2=200)
-    # edges = edges*mask
-    blank = np.zeros_like(edges)
+def circular_mask_inner_and_outter(frame):
+    rows, cols = frame.shape
+    edges = cv.Canny(frame, threshold1=100, threshold2=200)
     
     avg_mat = np.argwhere(edges)
-    # print(avg_mat.shape)
-
-
 
     ix = avg_mat[:,0]
     iy = avg_mat[:,1]
     ix_mean = np.mean(ix)
     iy_mean = np.mean(iy)
-    # moving average
-    # if(len(center_array)>=10):
-    #     center_array.reverse()
-    #     center_array.pop()
-    #     center_array.reverse()
-
-
-    #     ix_mean = np.mean(center_array[:][0][0])
-    #     iy_mean = np.mean(center_array[:][0][1])
-    #     print(len(center_array[0]))
-    #     print("center",(ix_mean,iy_mean))
     center = [ix_mean,iy_mean]
-    # print(center_array)
-    # center_array.append(center)
 
 
-    r= 200
+    mask = np.zeros((rows, cols), np.uint8)
+    r = 500
     x, y = np.ogrid[:rows, :cols]
-    mask_area2 = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
-    mask2 = np.zeros((rows, cols), np.uint8)
-    mask2[mask_area2] = 1
-    # edges = edges*mask2
-    # cv.circle(edges,(ccol,crow),450,255,5)
-    # cv.circle(edges,(int(iy_mean),int(ix_mean)),200,255,3)
-    cv.imshow('frame',edges)
-    # cv.imshow('frame',blank)
+    mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+    mask[mask_area] = 1
+    frame = mask*frame
+    r = 250
+    mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+    mask[mask_area] = 0
+    frame = mask*frame
+    # cv.namedWindow('Circular mask', cv.WINDOW_NORMAL)
+    # cv.imshow('Circular mask',frame)
 
-    # if(cv.waitKey(0)==ord('q')):
-    #     cv.destroyAllWindows()
-    #     return
-    cv.waitKey(0)
-    return edges
+    return frame
 
-
-# def blob_detection_func(frame):
-#     ori = frame
-#     im = gray_conversion(ori)
-#     detector = cv.SimpleBlobDetector_create()
-#     keypoints = detector.detect(im)
-#     im_with_keypoints = cv.drawKeypoints(im, keypoints, np.array([]), (0,0,255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-#     cv.namedWindow('Original', cv.WINDOW_NORMAL)
-#     cv.namedWindow('BLOB', cv.WINDOW_NORMAL)
-#     cv.imshow('Original',ori) 
-#     cv.imshow('BLOB',im_with_keypoints)
-#     if cv.waitKey(0) & 0xff == 27:
-#         cv.destroyAllWindows()
-
-
-
-def harris_func(frame):
-    img = frame
-    # gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-    # gray = np.float32(gray)
-    dst = cv.cornerHarris(img,2,3,0.04)
-    #result is dilated for marking the corners, not important
-    dst = cv.dilate(dst,None)
-    # Threshold for an optimal value, it may vary depending on the image.
-    img[dst>0.01*dst.max()]=[255]
-    cv.namedWindow('dst',cv.WINDOW_NORMAL)
-    cv.imshow('dst',img)
-    if cv.waitKey(0) & 0xff == 27:
-        cv.destroyAllWindows()
-
-def gray_conversion(frame):
-    median = cv.medianBlur(frame, 5)
-    gray_img = cv.cvtColor(median,cv.COLOR_BGR2GRAY)
-    return gray_img
-
-def blob_function(frame):
-    img = frame
-    gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-    detector = cv.SimpleBlobDetector(gray)
-    blank = np.zeros((1,1))
-    keypoints = detector.detect(img)
-    blobs = cv.drawKeypoints(img, keypoints, blank, (0,255,255), cv.DRAW_MATCHES_FLAGS_DEFAULT)
-    cv.namedWindow('Blob',cv.WINDOW_NORMAL)
-    cv.imshow('Blob',blobs)
-
-# def homography_func(i,w):
-
-#     a = [[xw1, yw1, 1, 0, 0, 0, -xc1*xw1, -xc1*yw1, -xc1],
-#          [0, 0, 0, xw1, yw1, 1, -yc1*xw1, -yc1*yw1, -yc1],
-#          [xw2, yw2, 1, 0, 0, 0, -xc2*xw2, -xc2*yw2, -xc2],
-#          [0, 0, 0, xw2, yw2, 1, -yc2*xw2, -yc2*yw2, -yc2],
-#          [xw3, yw3, 1, 0, 0, 0, -xc3*xw3, -xc3*yw3, -xc3],
-#          [0, 0, 0, xw3, yw3, 1, -yc3*xw3, -yc3*yw3, -yc3],
-#          [xw4, yw4, 1, 0, 0, 0, -xc4*xw4, -xc4*yw4, -xc4],
-#          [0, 0, 0, xw4, yw4, 1, -yc4*xw4, -yc4*yw4, -yc4]]
-
-def hough_transform(frame):
-    rho_resolution=150
-    theta_resolution=360
-    threshold=180
-    rho_theta_values = []
-    width, height = frame.shape
-    hough_img = np.empty((width, height, 3))
-    hough_img[:, :, 2] =  hough_img[:, :, 1] =  hough_img[:, :, 0] =  og_img/255.
+def homography(corners,frame):
+    xw1,yw1 = corners[2]
+    xw2,yw2 = corners[3]
+    xw3,yw3 = corners[0]
+    xw4,yw4 = corners[1]
+    xc1, yc1 = 0,0
+    xc2 , yc2 = 160,0
+    xc3 , yc3 = 160,160
+    xc4 , yc4 = 0,160
+    corners2 = np.array([
+        [xc1,yc1],
+        [xc2,yc2],
+        [xc3,yc3],
+        [xc4,yc4]
+    ])
+    A = np.array([[xw1, yw1, 1, 0, 0, 0, -xc1*xw1, -xc1*yw1, -xc1],
+         [0, 0, 0, xw1, yw1, 1, -yc1*xw1, -yc1*yw1, -yc1],
+         [xw2, yw2, 1, 0, 0, 0, -xc2*xw2, -xc2*yw2, -xc2],
+         [0, 0, 0, xw2, yw2, 1, -yc2*xw2, -yc2*yw2, -yc2],
+         [xw3, yw3, 1, 0, 0, 0, -xc3*xw3, -xc3*yw3, -xc3],
+         [0, 0, 0, xw3, yw3, 1, -yc3*xw3, -yc3*yw3, -yc3],
+         [xw4, yw4, 1, 0, 0, 0, -xc4*xw4, -xc4*yw4, -xc4],
+         [0, 0, 0, xw4, yw4, 1, -yc4*xw4, -yc4*yw4, -yc4]])
     
-    digonal = math.sqrt(width*width + height*height)
-    max_size=max(width,height)**2
-    
-    thetas = np.linspace(0,180,theta_resolution+1)
-    rhos = np.linspace(-digonal,digonal,rho_resolution+1)
-   
-    acc = np.zeros((rho_resolution+1,theta_resolution+1))
+    m, n = A.shape
 
-    for x_index in range(0, width):
-        for y_index in range(0, height):
-            if edges[x_index][y_index] > 0:
-                for t_index in range(0, len(thetas)):
-                    rho = x_index * math.cos(thetas[t_index]) + y_index * math.sin(thetas[t_index])
-                    for r_index in range(0, len(rhos)):
-                        if rhos[r_index]>rho:
-                            break
-                    acc[r_index][t_index] += 1
-   
-    for rho_value in range(0, len(rhos)):
-        for t_value in range(0, len(thetas)):
-            if acc[rho_value][t_value] >= threshold:
-                rho_theta_values.append([rhos[rho_value], thetas[t_value]])
+    AA_t = np.dot(A, A.transpose())
+    A_tA = np.dot(A.transpose(), A) 
 
+    eigen_values_1, U = np.linalg.eig(AA_t)
+    eigen_values_2, V = np.linalg.eig(A_tA)
+    index_1 = np.flip(np.argsort(eigen_values_1))
+    eigen_values_1 = eigen_values_1[index_1]
+    U = U[:, index_1]
+    index_2 = np.flip(np.argsort(eigen_values_2))
+    eigen_values_2 = eigen_values_2[index_2]
+    V = V[:, index_2]
+
+    E = np.zeros([m, n])
+
+    var = np.minimum(m, n)
+
+    for j in range(var):
+        E[j,j] = np.abs(np.sqrt(eigen_values_1[j]))  
+
+    Homography_Mat_ver = V[:, V.shape[1] - 1]
+    Homography = Homography_Mat_ver.reshape([3,3])
+    Homography = Homography / Homography[2,2]
+
+    return Homography
+
+def circular_mask_outter(frame):
+    img = frame.copy()
+    rows, cols = img.shape
+    edges = cv.Canny(img, threshold1=100, threshold2=200)
     
-    for rho_theta in rho_theta_values:
-        rho=rho_theta[0]
-        theta=rho_theta[1]
-        a = np.cos(theta)
-        b = np.sin(theta)
-        x0 = a*rho
-        y0 = b*rho
-        x1 = int(x0 + max_size*(-b))
-        y1 = int(y0 + max_size*(a))
-        x2 = int(x0 - max_size*(-b))
-        y2 = int(y0 - max_size*(a))
-        cv.line(hough_img,(x1,y1),(x2,y2),(1,0,0),1)
+    avg_mat = np.argwhere(edges)
+
+    ix = avg_mat[:,0]
+    iy = avg_mat[:,1]
+    ix_mean = np.mean(ix)
+    iy_mean = np.mean(iy)
+    center = [ix_mean,iy_mean]
+
+
+    mask = np.zeros((rows, cols), np.uint8)
+    r = 500
+    x, y = np.ogrid[:rows, :cols]
+    mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+    mask[mask_area] = 1
+    img = mask*img
+
+    return img
+
+def remove_outter(frame,corners):
+    img = frame.copy()
+    cv.polylines(img,[corners],True,(0,0,0),80)
+    # cv.namedWindow("Outter Removed",cv.WINDOW_NORMAL)
+    # cv.imshow("Outter Removed",img)
+    return img
+
+def warp_frame_to_camera(image, H):
+    
+    H_inv=np.linalg.inv(H)
+    warped=np.zeros((160,160),np.uint8)
+    for a in range(warped.shape[0]):
+        for b in range(warped.shape[1]):
+            f = [a,b,1]
+            f = np.reshape(f,(3,1))
+            x, y, z = np.matmul(H_inv,f)
+            warped[a][b] = image[int(y/z)][int(x/z)]
+    cv.imshow('Warped',warped)
+    return(warped)
+
+
+
+def warp_camera_to_frame(frame,image,H):
+    # H_inv=np.linalg.inv(H)
+    unwarped=np.zeros((400,500),np.uint8)
+
+    # for a in range(frame.shape[0]):
+    #     for b in range(frame.shape[1]):
+    #         f = [a,b,1]
+    #         f = np.reshape(f,(3,1))
+    #         x, y, z = np.matmul(H,f)
+    #         y_dash = int(y / z)
+    #         x_dash = int(x / z)
+    #         if (1080 > x_dash > 0) and (1920 > y_dash > 0):
+    #              image[x_dash][y_dash] =frame[a][b] 
+    # frame = cv.warpPerspective()
+    # cv.namedWindow('unwarped',cv.WINDOW_NORMAL)
+    # cv.imshow('unwarped',image)
+    return(unwarped)
