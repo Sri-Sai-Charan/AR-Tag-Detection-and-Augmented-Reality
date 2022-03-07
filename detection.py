@@ -2,9 +2,6 @@
 import numpy as np
 import cv2 as cv
 from imagePreprocessing import *
-# cv.namedWindow('frame',cv.WINDOW_NORMAL)
-# cv.namedWindow('testudo_1',cv.WINDOW_NORMAL)
-# cv.namedWindow('final',cv.WINDOW_NORMAL)
 from encoder import *
 
 def main():
@@ -29,11 +26,9 @@ def main():
     while(cap.isOpened()):
         ret, frame = cap.read()
         if count>=0:
-            
-        
             if ret == False:
                 break        
-            # cv.imshow('frame',frame)
+            
             fft_img = fft_func(frame)
             c_mask_1 = circular_mask_inner_and_outter(fft_img)
             ret, thres = cv.threshold(c_mask_1,100,255,cv.THRESH_BINARY)
@@ -54,16 +49,16 @@ def main():
                     print("Reached")
                     search = False
                 if search:
-                    # print(testudo.shape)
+                    
                     warp_camera = warp_camera_to_frame(testudo,frame,H)
+                    cv.namedWindow('final',cv.WINDOW_NORMAL)
                     cv.imshow("final",warp_camera)
                     vid.write(warp_camera)
-                    # cv.imshow('testudo_1',testudo)
-            # else:
-            #     vid.write(frame)
-            # cv.waitKey(1)
-            # cv.waitKey(0)
-            # break
+                    
+            else:
+                vid.write(frame)
+            cv.waitKey(1)
+            
         print("Frame :",count)
         count+=1
     vid.release()
