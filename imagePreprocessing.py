@@ -38,6 +38,8 @@ def fft_func(frame):
 
 def shi_tomasi_func(frame):
     corners = cv.goodFeaturesToTrack(frame,500,0.001,1)
+    if corners is None:
+        return [0]
     corners = np.int0(corners)
     x_arr = []
     y_arr  = []
@@ -208,7 +210,8 @@ def warp_frame_to_camera(image, H):
             f = [a,b,1]
             f = np.reshape(f,(3,1))
             x, y, z = np.matmul(H_inv,f)
-            warped[a][b] = image[int(y/z)][int(x/z)]
+            if (1080 > int(y/z) > 0) and (1920 > int(x/z) > 0):
+                warped[a][b] = image[int(y/z)][int(x/z)]
     # cv.imshow('Warped',warped)
     return(warped)
 
@@ -216,9 +219,9 @@ def warp_frame_to_camera(image, H):
 
 def warp_camera_to_frame(testudo,frame,H):
     H_inv=np.linalg.inv(H)
-    unwarped= frame.copy()
-
-    for a in range(testudo.shape[1]):
+    # unwarped= frame.copy()
+    # print(testudo.shape)
+    for a in range(testudo.shape[0]):
         for b in range(testudo.shape[0]):
             f = [a,b,1]
             f = np.reshape(f,(3,1))
@@ -227,9 +230,9 @@ def warp_camera_to_frame(testudo,frame,H):
             x_dash = int(x / z)
             if (1080 > y_dash > 0) and (1920 > x_dash > 0):
                  frame[y_dash][x_dash] =testudo[a][b] 
-    cv.namedWindow('unwarped',cv.WINDOW_NORMAL)
-    GaussianBlur =cv.GaussianBlur(frame,(5,5),0)
-    median = cv.medianBlur(GaussianBlur,5)
-    blur = cv.bilateralFilter(median,9,75,75)
+    # cv.namedWindow('unwarped',cv.WINDOW_NORMAL)
+    # GaussianBlur =cv.GaussianBlur(frame,(5,5),0)
+    # median = cv.medianBlur(GaussianBlur,5)
+    # blur = cv.bilateralFilter(median,9,75,75)
     # cv.imshow('unwarped',blur)
-    return(blur)
+    return(frame)
