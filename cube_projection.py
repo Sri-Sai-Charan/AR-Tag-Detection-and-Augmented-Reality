@@ -180,7 +180,7 @@ def main():
 
     frame_width = int(cap.get(3)) 
     frame_height = int(cap.get(4))
-    vid = cv.VideoWriter('./Cube_output.avi',cv.VideoWriter_fourcc('M','J','P','G'), fps, (frame_width,frame_height))
+    # vid = cv.VideoWriter('./Cube_output.avi',cv.VideoWriter_fourcc('M','J','P','G'), fps, (frame_width,frame_height))
     count = 0
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -228,19 +228,19 @@ def main():
                 cv.line(frame,(int(x5/z5),int(y5/z5)),(int(x7/z7),int(y7/z7)), (0,0,255), 2)
                 cv.line(frame,(int(x6/z6),int(y6/z6)),(int(x8/z8),int(y8/z8)), (0,0,255), 2)
                 cv.line(frame,(int(x7/z7),int(y7/z7)),(int(x8/z8),int(y8/z8)), (0,0,255), 2)
-                # cv.namedWindow("CUBE VIDEO",cv.WINDOW_NORMAL)
-                # cv.imshow("CUBE VIDEO", frame)
-                vid.write(frame)
+                cv.namedWindow("CUBE VIDEO",cv.WINDOW_NORMAL)
+                cv.imshow("CUBE VIDEO", frame)
+                # vid.write(frame)
                 # cv.namedWindow('frame',cv.WINDOW_NORMAL)
                 # cv.imshow('frame',frame)
-            else:
-                vid.write(frame)
-            # cv.waitKey(1)
+            # else:
+                # vid.write(frame)
+            cv.waitKey(1)
             # cv.waitKey(0)
             # break
         print("Frame :",count)
         count+=1
-    vid.release()
+    # vid.release()
     cap.release()
  
 if __name__ =='__main__':
