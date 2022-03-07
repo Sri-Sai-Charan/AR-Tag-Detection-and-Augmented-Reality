@@ -59,13 +59,61 @@ def encoder(frame):
     bottom_left_img = encoder_img[x_upper:,:y_lower]
     bottom_right_img = encoder_img[x_upper:,y_upper:]
     
-    cv.namedWindow('encoder 1',cv.WINDOW_NORMAL)
-    cv.namedWindow('top left',cv.WINDOW_NORMAL)
-    cv.namedWindow('top right',cv.WINDOW_NORMAL)
-    cv.namedWindow('bottom left',cv.WINDOW_NORMAL)
-    cv.namedWindow('bottom right',cv.WINDOW_NORMAL)
-    cv.imshow('encoder 1',encoder_img)
-    cv.imshow('bottom left',bottom_left_img)
-    cv.imshow('top left',top_left_img )
-    cv.imshow('top right',top_right_img)
-    cv.imshow('bottom right',bottom_right_img)
+    # cv.namedWindow('encoder 1',cv.WINDOW_NORMAL)
+    # cv.namedWindow('top left',cv.WINDOW_NORMAL)
+    # cv.namedWindow('top right',cv.WINDOW_NORMAL)
+    # cv.namedWindow('bottom left',cv.WINDOW_NORMAL)
+    # cv.namedWindow('bottom right',cv.WINDOW_NORMAL)
+    # cv.imshow('encoder 1',encoder_img)
+    # cv.imshow('bottom left',bottom_left_img)
+    # cv.imshow('top left',top_left_img )
+    # cv.imshow('top right',top_right_img)
+    # cv.imshow('bottom right',bottom_right_img)
+
+    testudo_img = cv.imread('testudo.png')
+    width = int(testudo_img.shape[1] * (img.shape[1] /testudo_img.shape[1]) )
+    height = int(testudo_img.shape[0] *  (img.shape[0] /testudo_img.shape[0]))
+    dim = (width, height)
+    resized_testudo = cv.resize(testudo_img, dim, interpolation = cv.INTER_AREA)
+    top_left_flag = np.argwhere(top_left_img==0)
+
+    if len(top_left_flag) > 30:
+        print("not Tl")
+    else:
+        rotated_testudo = rotate_img(resized_testudo,180)
+        return rotated_testudo
+
+    top_right_flag = np.argwhere(top_right_img==0)
+    if len(top_right_flag) > 30 :
+        print("not Tr")
+    else:
+        rotated_testudo = rotate_img(resized_testudo,90)
+        return rotated_testudo
+    bottom_left_flag = np.argwhere(bottom_left_img==0)
+    if len(bottom_left_flag) > 30 :
+        print("not Bl")
+    else:
+        rotated_testudo = rotate_img(resized_testudo,-90)
+        return rotated_testudo
+        
+    bottom_right_flag = np.argwhere(bottom_right_img==0)
+    if len(bottom_right_flag) > 30 :
+        print("not Br")
+    else: 
+        rotated_testudo = resized_testudo
+        return rotated_testudo
+
+
+    
+    
+def rotate_img(frame,deg):
+    image = frame.copy()
+    # grab the dimensions of the image and calculate the center of the
+    # image
+    (h, w) = image.shape[:2]
+    (cX, cY) = (w // 2, h // 2)
+    # rotate our image by 45 degrees around the center of the image
+    M = cv.getRotationMatrix2D((cX, cY), deg, 1.0)
+    rotated = cv.warpAffine(image, M, (w, h))
+    # cv.imshow("Rotated ", rotated)
+    return rotated

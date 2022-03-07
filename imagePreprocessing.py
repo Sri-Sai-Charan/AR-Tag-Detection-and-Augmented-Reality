@@ -1,5 +1,5 @@
 #!/usr/bin/python3 
-from cv2 import cvtColor
+from cv2 import GaussianBlur, cvtColor
 import numpy as np
 import scipy.fftpack
 from scipy.fftpack import fft, fft2, ifft
@@ -118,15 +118,15 @@ def circular_mask_inner_and_outter(frame):
 
     return frame
 
-def homography(corners,frame):
-    xw1,yw1 = corners[2]
-    xw2,yw2 = corners[3]
-    xw3,yw3 = corners[0]
-    xw4,yw4 = corners[1]
-    xc1, yc1 = 0,0
-    xc2 , yc2 = 160,0
-    xc3 , yc3 = 160,160
-    xc4 , yc4 = 0,160
+def homography(corners_1,corners_2):
+    xw1,yw1 = corners_1[2]
+    xw2,yw2 = corners_1[3]
+    xw3,yw3 = corners_1[0]
+    xw4,yw4 = corners_1[1]
+    xc1, yc1 = corners_2[0]
+    xc2 , yc2 = corners_2[1]
+    xc3 , yc3 = corners_2[2]
+    xc4 , yc4 = corners_2[3]
     corners2 = np.array([
         [xc1,yc1],
         [xc2,yc2],
@@ -209,25 +209,27 @@ def warp_frame_to_camera(image, H):
             f = np.reshape(f,(3,1))
             x, y, z = np.matmul(H_inv,f)
             warped[a][b] = image[int(y/z)][int(x/z)]
-    cv.imshow('Warped',warped)
+    # cv.imshow('Warped',warped)
     return(warped)
 
 
 
-def warp_camera_to_frame(frame,image,H):
-    # H_inv=np.linalg.inv(H)
-    unwarped=np.zeros((400,500),np.uint8)
+def warp_camera_to_frame(testudo,frame,H):
+    H_inv=np.linalg.inv(H)
+    unwarped= frame.copy()
 
-    # for a in range(frame.shape[0]):
-    #     for b in range(frame.shape[1]):
-    #         f = [a,b,1]
-    #         f = np.reshape(f,(3,1))
-    #         x, y, z = np.matmul(H,f)
-    #         y_dash = int(y / z)
-    #         x_dash = int(x / z)
-    #         if (1080 > x_dash > 0) and (1920 > y_dash > 0):
-    #              image[x_dash][y_dash] =frame[a][b] 
-    # frame = cv.warpPerspective()
-    # cv.namedWindow('unwarped',cv.WINDOW_NORMAL)
-    # cv.imshow('unwarped',image)
-    return(unwarped)
+    for a in range(testudo.shape[1]):
+        for b in range(testudo.shape[0]):
+            f = [a,b,1]
+            f = np.reshape(f,(3,1))
+            x, y, z = np.matmul(H_inv,f)
+            y_dash = int(y / z)
+            x_dash = int(x / z)
+            if (1080 > y_dash > 0) and (1920 > x_dash > 0):
+                 frame[y_dash][x_dash] =testudo[a][b] 
+    cv.namedWindow('unwarped',cv.WINDOW_NORMAL)
+    GaussianBlur =cv.GaussianBlur(frame,(5,5),0)
+    median = cv.medianBlur(GaussianBlur,5)
+    blur = cv.bilateralFilter(median,9,75,75)
+    # cv.imshow('unwarped',blur)
+    return(blur)
