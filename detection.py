@@ -28,7 +28,6 @@ def main():
         if count>=0:
             if ret == False:
                 break        
-            
             fft_img = fft_func(frame)
             c_mask_1 = circular_mask_inner_and_outter(fft_img)
             ret, thres = cv.threshold(c_mask_1,100,255,cv.THRESH_BINARY)

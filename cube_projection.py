@@ -217,7 +217,6 @@ def main():
             else:
                 vid.write(frame)
             cv.waitKey(1)
-
         print("Frame :",count)
         count+=1
     vid.release()
