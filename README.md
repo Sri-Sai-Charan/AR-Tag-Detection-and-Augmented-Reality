@@ -40,7 +40,7 @@ This code uses uses basic OpenCV function to carry out various masks and impleme
 
 ## Getting Started
 
-## Dependencies
+### Dependencies
 
 * numpy library, python version 3.X.X needed before installing program.
 * cv2 library, opencv is needed before running the program
