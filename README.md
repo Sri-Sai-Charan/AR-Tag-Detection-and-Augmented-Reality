@@ -41,7 +41,38 @@ python3 cube_projection.py
 ```
 CTRL + ALT + N
 ```
+### Folder Structure:
 
+```
+📦AR-Tag-Detection-and-Augmented-Reality
+ ┣ 📂Media
+ ┃ ┣ 📜1tagvideo.mp4
+ ┃ ┣ 📜kmatrix.xlsx - Sheet1.csv
+ ┃ ┗ 📜testudo.png
+ ┣ 📂Results
+ ┃ ┣ 📂Detection _Testudo
+ ┃ ┃ ┣ 📜Shi_tomasi_after_pt_selection.png
+ ┃ ┃ ┣ 📜Shi_tomasi_pre_selection.png
+ ┃ ┃ ┣ 📜camera_to_world.png
+ ┃ ┃ ┣ 📜circular_inner_and_outter_mask.png
+ ┃ ┃ ┣ 📜circular_outter_mask_only.png
+ ┃ ┃ ┣ 📜encoder_img.png
+ ┃ ┃ ┣ 📜fft_img.png
+ ┃ ┃ ┣ 📜rectangular_mask.png
+ ┃ ┃ ┣ 📜start_image.png
+ ┃ ┃ ┗ 📜warp_world_to_camera.png
+ ┃ ┣ 📜Cube_output.avi
+ ┃ ┣ 📜cube_world_frame.png
+ ┃ ┗ 📜testudo_output.avi
+ ┣ 📂__pycache__
+ ┃ ┣ 📜encoder.cpython-36.pyc
+ ┃ ┗ 📜imagePreprocessing.cpython-36.pyc
+ ┣ 📜README.md
+ ┣ 📜cube_projection.py
+ ┣ 📜detection.py
+ ┣ 📜encoder.py
+ ┗ 📜imagePreprocessing.py
+```
 ## Authors
 
 Sri Sai Charan Velisetti - svellise@umd.edu
